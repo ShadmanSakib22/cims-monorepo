@@ -1,0 +1,46 @@
+{
+  "app": {
+    "name": "SmartClinic",
+    "tagline": "Clinic Information Management System"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "patients": "Patients",
+    "doctors": "Doctors",
+    "appointments": "Appointments",
+    "queue": "Queue",
+    "documents": "Documents",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "search": "Search"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search...",
+    "noResults": "No results found",
+    "confirm": "Confirm",
+    "back": "Back",
+    "actions": "Actions",
+    "status": "Status",
+    "date": "Date",
+    "time": "Time",
+    "language": "Language",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "previous": "Previous",
+    "next": "Next",
+    "total": "Total"
+  },
+  "auth": {
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "profile": "Profile"
+  }
+}
