@@ -2,10 +2,6 @@ import { DocumentCategory } from '@prisma/client'
 import prisma from '@/core/prisma.js'
 import { NotFoundError } from '@/core/errors.js'
 import { createAuditLog } from '@/modules/audit/audit.service.js'
-import type { z } from 'zod'
-import type { createDocumentSchema } from './documents.schema.js'
-
-type CreateDocumentInput = z.infer<typeof createDocumentSchema>
 
 export async function listPatientDocuments(patientId: string) {
   const patient = await prisma.patient.findUnique({ where: { id: patientId } })
@@ -17,14 +13,22 @@ export async function listPatientDocuments(patientId: string) {
   })
 }
 
-export async function createDocument(data: CreateDocumentInput, userId: string) {
+export async function uploadDocument(data: {
+  patientId: string
+  category: string
+  fileName: string
+  fileUrl: string
+  fileSize: number
+  mimeType: string
+  uploadedBy: string
+}) {
   const patient = await prisma.patient.findUnique({ where: { id: data.patientId } })
   if (!patient) throw new NotFoundError('Patient')
 
   const document = await prisma.document.create({
     data: {
       patientId: data.patientId,
-      uploadedBy: userId,
+      uploadedBy: data.uploadedBy,
       category: data.category as DocumentCategory,
       fileName: data.fileName,
       fileUrl: data.fileUrl,
@@ -34,7 +38,7 @@ export async function createDocument(data: CreateDocumentInput, userId: string) 
   })
 
   await createAuditLog({
-    userId,
+    userId: data.uploadedBy,
     entity: 'Document',
     entityId: document.id,
     action: 'UPLOADED',
