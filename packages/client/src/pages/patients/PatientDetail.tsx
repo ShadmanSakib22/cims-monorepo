@@ -5,6 +5,7 @@ import { usePatientDocuments } from '@/hooks/useDocuments'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { UploadDialog } from '@/components/Documents/UploadDialog'
 import { ArrowLeft, FileText, Calendar, Stethoscope } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -49,8 +50,25 @@ export function Component() {
             <FileText className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{documents?.length || 0}</p>
-            <p className="text-xs text-muted-foreground">Uploaded files</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold">{documents?.length || 0}</p>
+                <p className="text-xs text-muted-foreground">Uploaded files</p>
+              </div>
+              <UploadDialog patientId={id} />
+            </div>
+            {documents && documents.length > 0 && (
+              <div className="mt-4 space-y-1">
+                {documents.map((doc: any) => (
+                  <div key={doc.id} className="flex items-center justify-between text-sm">
+                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                      {doc.fileName}
+                    </a>
+                    <span className="text-muted-foreground">{doc.category}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>
