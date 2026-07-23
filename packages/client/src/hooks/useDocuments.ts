@@ -10,10 +10,15 @@ export function usePatientDocuments(patientId: string) {
   })
 }
 
-export function useUploadDocument() {
+export function useUploadFile() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: any) => api.post('/documents', data).then((r) => r.data),
+    mutationFn: async (formData: FormData) => {
+      const res = await api.post('/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return res.data
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['documents'] })
       toast.success('Document uploaded')
