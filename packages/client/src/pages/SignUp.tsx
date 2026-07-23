@@ -1,16 +1,16 @@
-import { SignIn } from '@clerk/clerk-react'
-import { signInAppearance } from '@/lib/auth'
+import { SignUp } from '@clerk/clerk-react'
+import { signUpAppearance } from '@/lib/auth'
 
 export function Component() {
   return (
     <div className="flex flex-1 items-center justify-center p-4">
       <div className="w-full max-w-sm">
 
-        <SignIn
+        <SignUp
           routing="path"
-          path="/login"
-          signUpUrl="/signup"
-          appearance={signInAppearance}
+          path="/signup"
+          signInUrl="/login"
+          appearance={signUpAppearance}
         />
       </div>
     </div>

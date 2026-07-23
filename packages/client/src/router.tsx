@@ -11,6 +11,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, lazy: () => import('@/pages/Index') },
       { path: '/login', lazy: () => import('@/pages/Login') },
+      { path: '/signup', lazy: () => import('@/pages/SignUp') },
+      { path: '/forgot-password', lazy: () => import('@/pages/ForgotPassword') },
     ],
   },
   {
