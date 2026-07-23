@@ -1,4 +1,6 @@
+import Groq from 'groq-sdk'
 import prisma from '@/core/prisma.js'
+import logger from '@/core/logger.js'
 
 export async function getDashboardStats() {
   const today = new Date()
@@ -78,6 +80,49 @@ export async function getClinicalAnalytics() {
   return {
     topDiagnoses: diagnoses.map((d) => ({ diagnosis: d.diagnosis, count: d._count.diagnosis })),
     topMedicines: medicines.map((m) => ({ medicine: m.medicineName, count: m._count.medicineName })),
+  }
+}
+
+const INSIGHT_PROMPT = `You are a clinic analytics assistant. Given the following clinic data, provide a brief natural language summary with key insights and notable patterns. Focus on actionable observations. Keep it concise (3-5 sentences).`
+
+export async function getAIInsights() {
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) {
+    return { insights: 'AI insights not configured (GROQ_API_KEY missing)' }
+  }
+
+  try {
+    const [stats, clinical, trends] = await Promise.all([
+      getDashboardStats(),
+      getClinicalAnalytics(),
+      getAppointmentTrends(30),
+    ])
+
+    const dataSummary = [
+      `Today: ${stats.appointmentsToday} appointments, ${stats.completedToday} completed, ${stats.cancelledToday} cancelled, ${stats.noShowToday} no-shows.`,
+      `Completion rate: ${Math.round(stats.completionRate)}%.`,
+      `Total patients: ${stats.totalPatients}, Doctors: ${stats.totalDoctors}.`,
+      `Top diagnoses: ${clinical.topDiagnoses.slice(0, 3).map(d => `${d.diagnosis} (${d.count})`).join(', ') || 'none'}.`,
+      `Top medicines: ${clinical.topMedicines.slice(0, 3).map(m => `${m.medicine} (${m.count})`).join(', ') || 'none'}.`,
+      `Last 30 days: ${trends.total} appointments total.`,
+    ].join(' ')
+
+    const groq = new Groq({ apiKey })
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: INSIGHT_PROMPT },
+        { role: 'user', content: dataSummary },
+      ],
+      temperature: 0.3,
+      max_tokens: 200,
+    })
+
+    const insights = completion.choices[0]?.message?.content || 'Unable to generate insights.'
+    return { insights, data: { stats, clinical, trends } }
+  } catch (err: any) {
+    logger.error({ err }, 'AI insights generation failed')
+    return { insights: 'Unable to generate AI insights at this time.', error: err.message }
   }
 }
 

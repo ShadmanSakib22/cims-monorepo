@@ -8,10 +8,10 @@ export function Component() {
   const { data, isLoading } = useDashboardStats()
 
   const stats = [
-    { label: 'Today\'s Appointments', value: data?.todayAppointments ?? 0, icon: CalendarClock },
+    { label: "Today's Appointments", value: data?.appointmentsToday ?? 0, icon: CalendarClock },
     { label: 'Total Patients', value: data?.totalPatients ?? 0, icon: Users },
-    { label: 'Active Doctors', value: data?.activeDoctors ?? 0, icon: Stethoscope },
-    { label: 'Pending Queue', value: data?.pendingQueue ?? 0, icon: Activity },
+    { label: 'Active Doctors', value: data?.totalDoctors ?? 0, icon: Stethoscope },
+    { label: 'Completion Rate', value: data?.completionRate != null ? `${Math.round(data.completionRate)}%` : '0%', icon: Activity },
   ]
 
   return (

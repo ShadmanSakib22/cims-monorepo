@@ -21,3 +21,11 @@ export function useAppointmentTrends(days = 30) {
     queryFn: () => api.get('/analytics/trends', { params: { days } }).then((r) => r.data),
   })
 }
+
+export function useAIInsights() {
+  return useQuery({
+    queryKey: ['analytics', 'insights'],
+    queryFn: () => api.get('/analytics/insights').then((r) => r.data),
+    refetchInterval: 60_000,
+  })
+}

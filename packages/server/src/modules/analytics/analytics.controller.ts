@@ -4,6 +4,7 @@ import {
   getDoctorAnalytics,
   getClinicalAnalytics,
   getAppointmentTrends,
+  getAIInsights,
 } from './analytics.service.js'
 
 export async function dashboard(req: Request, res: Response, next: NextFunction) {
@@ -32,5 +33,12 @@ export async function appointmentTrends(req: Request, res: Response, next: NextF
     const days = parseInt(req.query.days as string) || 30
     const stats = await getAppointmentTrends(days)
     res.json(stats)
+  } catch (err) { next(err) }
+}
+
+export async function aiInsights(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await getAIInsights()
+    res.json(result)
   } catch (err) { next(err) }
 }
