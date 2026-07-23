@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import api from '@/lib/axios'
 
 export function useDashboardStats() {
@@ -23,9 +23,7 @@ export function useAppointmentTrends(days = 30) {
 }
 
 export function useAIInsights() {
-  return useQuery({
-    queryKey: ['analytics', 'insights'],
-    queryFn: () => api.get('/analytics/insights').then((r) => r.data),
-    refetchInterval: 60_000,
+  return useMutation({
+    mutationFn: () => api.get('/analytics/insights').then((r) => r.data),
   })
 }

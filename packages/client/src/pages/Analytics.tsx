@@ -2,13 +2,14 @@ import { useTranslation } from 'react-i18next'
 import { useDashboardStats, useAppointmentTrends, useAIInsights } from '@/hooks/useAnalytics'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { BarChart3, CalendarClock, Users, Activity, Lightbulb, Loader2 } from 'lucide-react'
+import { BarChart3, CalendarClock, Users, Activity, Sparkles, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export function Component() {
   const { t } = useTranslation()
   const { data: stats } = useDashboardStats()
   const { data: trends } = useAppointmentTrends()
-  const { data: insights, isLoading: insightsLoading } = useAIInsights()
+  const insights = useAIInsights()
 
   const cards = [
     { label: 'Total Patients', value: stats?.totalPatients ?? 0, icon: Users },
@@ -41,15 +42,29 @@ export function Component() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>AI Insights</CardTitle>
-          <Lightbulb className="size-4 text-yellow-500" />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => insights.mutate()}
+            disabled={insights.isPending}
+          >
+            {insights.isPending ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 size-4" />
+            )}
+            Generate Insights
+          </Button>
         </CardHeader>
         <CardContent>
-          {insightsLoading ? (
+          {insights.isPending ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> Generating insights...
             </div>
+          ) : insights.data ? (
+            <p className="text-sm">{insights.data.insights}</p>
           ) : (
-            <p className="text-sm">{insights?.insights || 'No insights available'}</p>
+            <p className="text-sm text-muted-foreground">Click "Generate Insights" for an AI-powered summary of clinic activity.</p>
           )}
         </CardContent>
       </Card>
