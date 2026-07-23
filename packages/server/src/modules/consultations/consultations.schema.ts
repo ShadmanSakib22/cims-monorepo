@@ -38,12 +38,4 @@ export const createRevisionSchema = z.object({
   reason: z.string().min(1),
 })
 
-export const labOrderSchema = z.object({
-  test: z.string().min(1),
-  notes: z.string().optional(),
-})
 
-export const imagingOrderSchema = z.object({
-  test: z.string().min(1),
-  notes: z.string().optional(),
-})

@@ -79,14 +79,21 @@ export async function bookAppointment(data: BookAppointmentInput, userId: string
 export async function updateAppointmentStatus(
   appointmentId: string,
   status: string,
-  userId: string
+  userId: string,
+  cancelReason?: string
 ) {
   const existing = await prisma.appointment.findUnique({ where: { id: appointmentId } })
   if (!existing) throw new NotFoundError('Appointment')
 
+  const updateData: any = { status: status as any }
+  if (status === 'CANCELLED') {
+    updateData.cancelledAt = new Date()
+    if (cancelReason) updateData.cancelReason = cancelReason
+  }
+
   const appointment = await prisma.appointment.update({
     where: { id: appointmentId },
-    data: { status: status as any },
+    data: updateData,
     include: {
       patient: { include: { user: { select: { id: true, name: true } } } },
       doctor: { include: { user: { select: { id: true, name: true } } } },
@@ -138,7 +145,7 @@ export async function updateAppointmentStatus(
 }
 
 export async function cancelAppointment(appointmentId: string, data: CancelAppointmentInput, userId: string) {
-  return updateAppointmentStatus(appointmentId, 'CANCELLED', userId)
+  return updateAppointmentStatus(appointmentId, 'CANCELLED', userId, data.reason)
 }
 
 export async function getDoctorQueue(doctorId: string) {

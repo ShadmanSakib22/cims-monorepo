@@ -1,5 +1,6 @@
 import { Server as HttpServer } from 'http'
 import { Server, Socket } from 'socket.io'
+import { clerkClient } from '@clerk/clerk-sdk-node'
 import prisma from './prisma.js'
 import logger from './logger.js'
 
@@ -20,17 +21,8 @@ export function initSocket(httpServer: HttpServer) {
         return next(new Error('Authentication required'))
       }
 
-      const parts = (token as string).split('.')
-      if (parts.length !== 3) {
-        return next(new Error('Invalid token'))
-      }
-
-      const claims = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'))
-      if (!claims?.sub) {
-        return next(new Error('Invalid token claims'))
-      }
-
-      const user = await prisma.user.findUnique({ where: { clerkId: claims.sub } })
+      const { sub } = await clerkClient.verifyToken(token as string)
+      const user = await prisma.user.findUnique({ where: { clerkId: sub } })
       if (!user || !user.isActive) {
         return next(new Error('User not found or inactive'))
       }
@@ -45,14 +37,6 @@ export function initSocket(httpServer: HttpServer) {
   io.on('connection', (socket: Socket) => {
     const user = (socket as any).user
     logger.info({ userId: user.id, role: user.role }, 'Socket connected')
-
-    socket.on('join:doctor-queue', (doctorId: string) => {
-      socket.join(`doctor:${doctorId}`)
-    })
-
-    socket.on('join:reception', () => {
-      socket.join('reception')
-    })
 
     socket.on('disconnect', () => {
       logger.info({ userId: user.id }, 'Socket disconnected')

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { requireAuth, requireRole } from '@/core/clerk.js'
 import {
+  list,
   getById,
   update,
   addPrescriptionHandler,
@@ -11,6 +12,7 @@ import {
 
 const router = Router()
 
+router.get('/consultations', requireAuth, list)
 router.get('/consultations/:id', requireAuth, getById)
 router.put('/consultations/:id', requireAuth, requireRole('DOCTOR', 'ADMIN'), update)
 router.post('/consultations/:id/prescriptions', requireAuth, requireRole('DOCTOR', 'ADMIN'), addPrescriptionHandler)

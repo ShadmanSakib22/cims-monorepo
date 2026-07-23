@@ -8,7 +8,7 @@ const router = Router()
 
 router.get('/appointments', requireAuth, list)
 router.get('/appointments/:id', requireAuth, getById)
-router.post('/appointments', requireAuth, book)
+router.post('/appointments', requireAuth, requireRole('ADMIN', 'RECEPTIONIST', 'DOCTOR'), book)
 router.patch('/appointments/:id/status', requireAuth, updateAppointmentStatus)
 router.post('/appointments/:id/cancel', requireAuth, cancelAppointment)
 router.get('/doctors/:doctorId/queue', requireAuth, doctorQueue)

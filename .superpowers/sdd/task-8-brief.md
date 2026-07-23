@@ -1,3 +1,88 @@
+### Task 8: Consultations Module
+
+**Files:**
+- Create: `packages/server/src/modules/consultations/consultations.schema.ts`
+- Create: `packages/server/src/modules/consultations/consultations.types.ts`
+- Create: `packages/server/src/modules/consultations/consultations.service.ts`
+- Create: `packages/server/src/modules/consultations/consultations.controller.ts`
+- Create: `packages/server/src/modules/consultations/consultations.routes.ts`
+
+- [ ] **Step 1: Create `packages/server/src/modules/consultations/consultations.schema.ts`**
+
+```typescript
+import { z } from 'zod'
+
+export const vitalsSchema = z.object({
+  bp: z.string().optional(),
+  pulse: z.number().optional(),
+  temperature: z.number().optional(),
+  weight: z.number().optional(),
+  height: z.number().optional(),
+}).optional()
+
+export const updateConsultationSchema = z.object({
+  chiefComplaint: z.string().optional(),
+  historyOfPresentIllness: z.string().optional(),
+  vitals: vitalsSchema,
+  examination: z.string().optional(),
+  diagnosis: z.string().optional(),
+  clinicalNotes: z.string().optional(),
+  followUp: z.string().datetime().nullable().optional(),
+})
+
+export const addPrescriptionSchema = z.object({
+  medicineName: z.string().min(1),
+  strength: z.string(),
+  dosage: z.string(),
+  frequency: z.string(),
+  duration: z.string(),
+  route: z.string(),
+  notes: z.string().optional(),
+})
+
+export const updatePrescriptionSchema = addPrescriptionSchema.partial()
+
+export const finalizeConsultationSchema = z.object({
+  reason: z.string().optional(),
+})
+
+export const createRevisionSchema = z.object({
+  reason: z.string().min(1),
+})
+
+export const labOrderSchema = z.object({
+  test: z.string().min(1),
+  notes: z.string().optional(),
+})
+
+export const imagingOrderSchema = z.object({
+  test: z.string().min(1),
+  notes: z.string().optional(),
+})
+```
+
+- [ ] **Step 2: Create `packages/server/src/modules/consultations/consultations.types.ts`**
+
+```typescript
+import type { z } from 'zod'
+import type {
+  updateConsultationSchema,
+  addPrescriptionSchema,
+  updatePrescriptionSchema,
+  finalizeConsultationSchema,
+  createRevisionSchema,
+} from './consultations.schema.js'
+
+export type UpdateConsultationInput = z.infer<typeof updateConsultationSchema>
+export type AddPrescriptionInput = z.infer<typeof addPrescriptionSchema>
+export type UpdatePrescriptionInput = z.infer<typeof updatePrescriptionSchema>
+export type FinalizeConsultationInput = z.infer<typeof finalizeConsultationSchema>
+export type CreateRevisionInput = z.infer<typeof createRevisionSchema>
+```
+
+- [ ] **Step 3: Create `packages/server/src/modules/consultations/consultations.service.ts`**
+
+```typescript
 import prisma from '@/core/prisma.js'
 import { NotFoundError, ValidationError } from '@/core/errors.js'
 import { getIO } from '@/core/socket.js'
@@ -41,7 +126,7 @@ export async function updateConsultation(
     data: {
       chiefComplaint: data.chiefComplaint,
       historyOfPresentIllness: data.historyOfPresentIllness,
-      vitals: (data.vitals ?? undefined) as any,
+      vitals: data.vitals ?? undefined,
       examination: data.examination,
       diagnosis: data.diagnosis,
       clinicalNotes: data.clinicalNotes,
@@ -166,12 +251,10 @@ export async function createRevision(
       revisionReason: data.reason,
       chiefComplaint: original.chiefComplaint,
       historyOfPresentIllness: original.historyOfPresentIllness,
-      vitals: original.vitals as any,
+      vitals: original.vitals,
       examination: original.examination,
       diagnosis: original.diagnosis,
       clinicalNotes: original.clinicalNotes,
-      labOrders: original.labOrders as any,
-      imagingOrders: original.imagingOrders as any,
     },
   })
 
@@ -210,26 +293,98 @@ export async function createRevision(
     include: { prescriptions: true },
   })
 }
+```
 
-export async function listConsultations(page: number, limit: number, patientId?: string, doctorId?: string) {
-  const where: any = {}
-  if (patientId) where.patientId = patientId
-  if (doctorId) where.doctorId = doctorId
+- [ ] **Step 4: Create `packages/server/src/modules/consultations/consultations.controller.ts`**
 
-  const [consultations, total] = await Promise.all([
-    prisma.consultation.findMany({
-      where,
-      include: {
-        patient: { include: { user: { select: { name: true } } } },
-        doctor: { include: { user: { select: { name: true } } } },
-        prescriptions: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.consultation.count({ where }),
-  ])
+```typescript
+import type { Request, Response, NextFunction } from 'express'
+import {
+  getConsultationById,
+  updateConsultation,
+  addPrescription,
+  removePrescription,
+  finalizeConsultation,
+  createRevision,
+} from './consultations.service.js'
+import {
+  updateConsultationSchema,
+  addPrescriptionSchema,
+  finalizeConsultationSchema,
+  createRevisionSchema,
+} from './consultations.schema.js'
 
-  return { consultations, total, page, limit }
+export async function getById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const consultation = await getConsultationById(req.params.id)
+    res.json(consultation)
+  } catch (err) { next(err) }
 }
+
+export async function update(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = updateConsultationSchema.parse(req.body)
+    const consultation = await updateConsultation(req.params.id, data, req.user!.userId)
+    res.json(consultation)
+  } catch (err) { next(err) }
+}
+
+export async function addPrescriptionHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = addPrescriptionSchema.parse(req.body)
+    const prescription = await addPrescription(req.params.id, data, req.user!.userId)
+    res.status(201).json(prescription)
+  } catch (err) { next(err) }
+}
+
+export async function removePrescriptionHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    await removePrescription(req.params.prescriptionId, req.user!.userId)
+    res.status(204).send()
+  } catch (err) { next(err) }
+}
+
+export async function finalize(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = finalizeConsultationSchema.parse(req.body)
+    const consultation = await finalizeConsultation(req.params.id, data, req.user!.userId)
+    res.json(consultation)
+  } catch (err) { next(err) }
+}
+
+export async function revise(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createRevisionSchema.parse(req.body)
+    const revision = await createRevision(req.params.id, data, req.user!.userId)
+    res.status(201).json(revision)
+  } catch (err) { next(err) }
+}
+```
+
+- [ ] **Step 5: Create `packages/server/src/modules/consultations/consultations.routes.ts`**
+
+```typescript
+import { Router } from 'express'
+import { requireAuth, requireRole } from '@/core/clerk.js'
+import {
+  getById,
+  update,
+  addPrescriptionHandler,
+  removePrescriptionHandler,
+  finalize,
+  revise,
+} from './consultations.controller.js'
+
+const router = Router()
+
+router.get('/consultations/:id', requireAuth, getById)
+router.put('/consultations/:id', requireAuth, requireRole('DOCTOR', 'ADMIN'), update)
+router.post('/consultations/:id/prescriptions', requireAuth, requireRole('DOCTOR', 'ADMIN'), addPrescriptionHandler)
+router.delete('/consultations/:id/prescriptions/:prescriptionId', requireAuth, requireRole('DOCTOR', 'ADMIN'), removePrescriptionHandler)
+router.post('/consultations/:id/finalize', requireAuth, requireRole('DOCTOR', 'ADMIN'), finalize)
+router.post('/consultations/:id/revision', requireAuth, requireRole('DOCTOR', 'ADMIN'), revise)
+
+export default router
+```
+
+NOTE: Do NOT register routes in app.ts — Task 7 handles all route registration.
