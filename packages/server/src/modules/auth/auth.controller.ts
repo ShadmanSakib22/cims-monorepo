@@ -19,7 +19,7 @@ export async function handleClerkWebhook(req: Request, res: Response, next: Next
       return res.status(400).json({ error: 'Missing svix headers' })
     }
 
-    const payload = JSON.stringify(req.body)
+    const rawBody = req.body instanceof Buffer ? req.body : Buffer.from(JSON.stringify(req.body))
     const wh = new Webhook(secret)
     const headers = {
       'svix-id': svixId,
@@ -28,12 +28,13 @@ export async function handleClerkWebhook(req: Request, res: Response, next: Next
     }
 
     try {
-      wh.verify(payload, headers)
+      wh.verify(rawBody, headers)
     } catch {
       return res.status(401).json({ error: 'Invalid webhook signature' })
     }
 
-    const parsed = clerkWebhookSchema.parse(req.body)
+    const body = JSON.parse(rawBody.toString())
+    const parsed = clerkWebhookSchema.parse(body)
 
     switch (parsed.type) {
       case 'user.created':
