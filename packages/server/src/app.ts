@@ -1,4 +1,6 @@
 import express from 'express'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import cors from 'cors'
 import logger from '@/core/logger.js'
 import { AppError } from '@/core/errors.js'
@@ -21,6 +23,9 @@ app.use(cors({
 
 app.use('/api/webhooks', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '10mb' }))
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')))
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
