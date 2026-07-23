@@ -26,6 +26,10 @@ dist-ssr
 # Server build output
 packages/server/dist/
 
+# Uploaded files
+packages/server/uploads/*
+!packages/server/uploads/.gitkeep
+
 # Environment files (keep .env.example)
 packages/server/.env
 .env
